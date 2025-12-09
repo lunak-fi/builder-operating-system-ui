@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, Plus, ExternalLink, RefreshCw } from 'lucide-react';
 import { useSponsorsData } from '@/lib/useSponsorsData';
 
 export function Sponsors() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const { sponsors, isLoading, error, refetch } = useSponsorsData();
 
@@ -138,6 +140,7 @@ export function Sponsors() {
             {filteredSponsors.map((sponsor) => (
               <div
                 key={sponsor.id}
+                onClick={() => router.push(`/sponsors/${sponsor.id}`)}
                 className="grid grid-cols-[2fr_1fr_1fr_1fr_1.2fr_1.2fr_1fr] gap-4 px-4 py-4 hover:bg-gray-50 transition-colors cursor-pointer group"
               >
                 <div className="flex items-center gap-3">
