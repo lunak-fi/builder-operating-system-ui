@@ -1,15 +1,25 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { LayoutDashboard, Inbox, Users, Briefcase, Upload, Settings } from 'lucide-react';
+import { dealsAPI } from '@/lib/api';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [dealCount, setDealCount] = useState<number | null>(null);
+
+  // Fetch deal count for pipeline badge
+  useEffect(() => {
+    dealsAPI.getAll()
+      .then(deals => setDealCount(deals.length))
+      .catch(() => setDealCount(null));
+  }, []);
 
   const navItems = [
     { id: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { id: '/pipeline', label: 'Pipeline', icon: Inbox, badge: 24 },
+    { id: '/pipeline', label: 'Pipeline', icon: Inbox, badge: dealCount },
     { id: '/sponsors', label: 'Sponsors', icon: Users },
     { id: '/portfolio', label: 'Portfolio', icon: Briefcase },
     { id: '/upload', label: 'Upload', icon: Upload },
