@@ -1,83 +1,27 @@
+'use client';
+
 import { useState } from 'react';
-import { ChevronLeft, ArrowRight, X, Edit } from 'lucide-react';
+import { ChevronLeft, ArrowRight, Edit, RefreshCw, FileText, Download } from 'lucide-react';
+import { useDealDetail } from '@/lib/useDealDetail';
 
 interface DealDetailProps {
   dealId: string | null;
   onBack: () => void;
 }
 
-const mockDealDetails = {
-  '1': {
-    name: 'Riverside Commons',
-    stage: 'Due Diligence',
-    sponsor: 'Atlas Development',
-    market: 'Charleston, SC',
-    strategy: 'Value-Add',
-    gpCommitAsk: '$350K',
-    description: 'A 245-unit multifamily community located in the rapidly growing Charleston metro area. The property features modern amenities and is positioned for significant value creation through strategic renovations and operational improvements.',
-    property: {
-      units: '245 units',
-      sf: '225,000 SF',
-      yearBuilt: '2008',
-    },
-    businessPlan: 'Execute a comprehensive interior and exterior renovation program over 24 months. Upgrade common areas, fitness center, and pool. Implement smart home technology and premium finishes in units to achieve market-leading rental rates.',
-    investmentThesis: 'Charleston continues to experience strong population and job growth, with limited new supply in this submarket. Property is well-located near major employment centers and has significant upside potential through tactical value-add improvements.',
-    dates: {
-      received: 'Dec 1, 2025',
-      targetClose: 'Jan 15, 2026',
-    },
-    costs: {
-      totalProjectCost: '$45,200,000',
-      acquisitionPrice: '$38,500,000',
-      hardCosts: '$4,200,000',
-      softCosts: '$2,500,000',
-      loanAmount: '$31,000,000',
-    },
-    returns: {
-      lpEquityRequired: '$14,200,000',
-      gpCommit: '$350,000',
-      gpOwnershipPercent: '35%',
-      projectedIRR: '19.2%',
-      equityMultiple: '2.1x',
-      promoteHurdle: '15% IRR',
-    },
-    ourReturns: {
-      lpReturn: '$735,000',
-      projectedPromoteValue: '$1,250,000',
-      blendedReturn: '28.4% IRR',
-    },
-    sponsorInfo: {
-      name: 'Atlas Development',
-      founded: '2008',
-      aum: '$2.1B',
-      projects: '45+',
-      track: 'Atlas Development is a leading commercial real estate development firm specializing in value-add multifamily acquisitions across the Southeast. With over $2B in assets under management and a track record of 45+ successful projects, the firm focuses on identifying underperforming properties in high-growth markets.',
-    },
-    documents: [
-      { name: 'Investment Summary.pdf', size: '2.4 MB', date: 'Dec 1, 2025' },
-      { name: 'Financial Model.xlsx', size: '1.8 MB', date: 'Dec 1, 2025' },
-      { name: 'Market Analysis.pdf', size: '5.2 MB', date: 'Dec 2, 2025' },
-    ],
-    notes: [
-      { date: 'Dec 3, 2025', author: 'You', text: 'Strong sponsorship team with excellent track record in Charleston market. Returns look compelling vs. hurdle rate.' },
-      { date: 'Dec 2, 2025', author: 'You', text: 'Initial call scheduled with sponsor for Dec 5th to discuss business plan and market positioning.' },
-    ],
-  },
+const stageColors: Record<string, string> = {
+  'Received': 'bg-gray-200 text-gray-700',
+  'Under Review': 'bg-blue-100 text-blue-700',
+  'Due Diligence': 'bg-yellow-100 text-yellow-700',
+  'Term Sheet': 'bg-orange-100 text-orange-700',
+  'Committed': 'bg-green-100 text-green-700',
+  'Passed': 'bg-purple-100 text-purple-700',
 };
 
 export function DealDetail({ dealId, onBack }: DealDetailProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'financials' | 'sponsor' | 'documents' | 'notes'>('financials');
+  const [activeTab, setActiveTab] = useState<'overview' | 'financials' | 'sponsor' | 'documents' | 'notes'>('overview');
   const [noteText, setNoteText] = useState('');
-  
-  const deal = dealId ? mockDealDetails[dealId as keyof typeof mockDealDetails] : mockDealDetails['1'];
-
-  if (!deal) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-gray-500">Deal not found</div>
-      </div>
-    );
-  }
+  const { deal, isLoading, error, refetch } = useDealDetail(dealId);
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
@@ -87,14 +31,79 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
     { id: 'notes', label: 'Notes' },
   ] as const;
 
-  const stageColors: Record<string, string> = {
-    'Received': 'bg-gray-200 text-gray-700',
-    'Under Review': 'bg-blue-100 text-blue-700',
-    'Due Diligence': 'bg-yellow-100 text-yellow-700',
-    'Term Sheet': 'bg-orange-100 text-orange-700',
-    'Committed': 'bg-green-100 text-green-700',
-    'Passed': 'bg-purple-100 text-purple-700',
-  };
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="max-w-[1400px] mx-auto px-8 py-8">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-sm text-gray-600 hover:text-black transition-colors mb-6"
+          >
+            <ChevronLeft size={16} />
+            Pipeline
+          </button>
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
+            <div className="h-6 bg-gray-200 rounded-full w-24 mb-6"></div>
+            <div className="grid grid-cols-4 gap-4 mb-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-gray-50 rounded-lg px-4 py-3">
+                  <div className="h-3 bg-gray-200 rounded w-16 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-24"></div>
+                </div>
+              ))}
+            </div>
+            <div className="h-64 bg-gray-100 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="max-w-[1400px] mx-auto px-8 py-8">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-sm text-gray-600 hover:text-black transition-colors mb-6"
+          >
+            <ChevronLeft size={16} />
+            Pipeline
+          </button>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <p className="text-red-700 mb-4">{error}</p>
+            <button
+              onClick={refetch}
+              className="flex items-center gap-2 text-red-600 hover:text-red-800 transition-colors"
+            >
+              <RefreshCw size={14} />
+              Try again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Not found state
+  if (!deal) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500 mb-4">Deal not found</p>
+          <button
+            onClick={onBack}
+            className="text-sm text-gray-600 hover:text-black transition-colors"
+          >
+            ← Back to Pipeline
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -113,7 +122,7 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
           <div className="flex items-start justify-between mb-4">
             <div>
               <h1 className="mb-3">{deal.name}</h1>
-              <span className={`text-xs px-3 py-1.5 rounded-full ${stageColors[deal.stage]}`}>
+              <span className={`text-xs px-3 py-1.5 rounded-full ${stageColors[deal.stage] || stageColors['Received']}`}>
                 {deal.stage}
               </span>
             </div>
@@ -165,6 +174,9 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
               }`}
             >
               {tab.label}
+              {tab.id === 'documents' && deal.documents.length > 0 && (
+                <span className="ml-1.5 text-gray-400">({deal.documents.length})</span>
+              )}
               {activeTab === tab.id && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />
               )}
@@ -177,7 +189,7 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
           <div className="max-w-4xl space-y-8">
             <div>
               <h3 className="mb-4">Property Details</h3>
-              <div className="grid grid-cols-3 gap-6 bg-gray-50 rounded-lg p-6">
+              <div className="grid grid-cols-4 gap-6 bg-gray-50 rounded-lg p-6">
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Units</div>
                   <div className="text-sm text-black">{deal.property.units}</div>
@@ -190,6 +202,10 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
                   <div className="text-xs text-gray-500 mb-1">Year Built</div>
                   <div className="text-sm text-black">{deal.property.yearBuilt}</div>
                 </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Address</div>
+                  <div className="text-sm text-black">{deal.property.address}</div>
+                </div>
               </div>
             </div>
 
@@ -197,13 +213,6 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
               <h3 className="mb-4">Business Plan</h3>
               <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 rounded-lg p-6">
                 {deal.businessPlan}
-              </p>
-            </div>
-
-            <div>
-              <h3 className="mb-4">Investment Thesis</h3>
-              <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 rounded-lg p-6">
-                {deal.investmentThesis}
               </p>
             </div>
 
@@ -235,7 +244,7 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
                     <div className="text-3xl text-black">{deal.costs.totalProjectCost}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-2">Acquisition Price</div>
+                    <div className="text-xs text-gray-500 mb-2">Acquisition/Land Cost</div>
                     <div className="text-xl text-black">{deal.costs.acquisitionPrice}</div>
                   </div>
                   <div>
@@ -270,36 +279,9 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
                     <div className="text-xl text-black">{deal.returns.gpCommit}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-2">GP Ownership % (Our Promote Share)</div>
-                    <div className="text-xl text-black">{deal.returns.gpOwnershipPercent}</div>
-                  </div>
-                  <div>
                     <div className="text-xs text-gray-500 mb-2">Equity Multiple</div>
                     <div className="text-xl text-black">{deal.returns.equityMultiple}</div>
                   </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-2">Promote Hurdle</div>
-                    <div className="text-xl text-black">{deal.returns.promoteHurdle}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Our Returns Analysis */}
-            <div className="bg-[#D4FF00] bg-opacity-10 border border-[#D4FF00] border-opacity-30 rounded-lg p-8">
-              <h3 className="mb-6">Our Returns Analysis</h3>
-              <div className="grid grid-cols-3 gap-8">
-                <div>
-                  <div className="text-xs text-gray-500 mb-2">LP Return (from equity)</div>
-                  <div className="text-2xl text-black">{deal.ourReturns.lpReturn}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 mb-2">Projected Promote Value</div>
-                  <div className="text-2xl text-black">{deal.ourReturns.projectedPromoteValue}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 mb-2">Blended Return (LP + Promote)</div>
-                  <div className="text-2xl text-black">{deal.ourReturns.blendedReturn}</div>
                 </div>
               </div>
             </div>
@@ -310,34 +292,35 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
           <div className="max-w-3xl">
             <div className="bg-gray-50 rounded-lg p-8">
               <div className="flex items-start gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-gray-200" />
-                <div>
+                <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xl font-medium">
+                  {deal.sponsorInfo.name.charAt(0)}
+                </div>
+                <div className="flex-1">
                   <h3 className="mb-2">{deal.sponsorInfo.name}</h3>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    {deal.sponsorInfo.track}
+                    {deal.sponsorInfo.description}
                   </p>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-3 gap-6 pt-6 border-t border-gray-200">
-                <div>
-                  <div className="text-xs text-gray-500 mb-1">Founded</div>
-                  <div className="text-sm text-black">{deal.sponsorInfo.founded}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 mb-1">AUM</div>
-                  <div className="text-sm text-black">{deal.sponsorInfo.aum}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 mb-1">Projects</div>
-                  <div className="text-sm text-black">{deal.sponsorInfo.projects}</div>
-                </div>
-              </div>
 
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <button className="text-sm text-gray-600 hover:text-black transition-colors">
-                  View full sponsor profile →
-                </button>
+              <div className="grid grid-cols-2 gap-6 pt-6 border-t border-gray-200">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Headquarters</div>
+                  <div className="text-sm text-black">{deal.sponsorInfo.hqLocation}</div>
+                </div>
+                {deal.sponsorInfo.website && (
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Website</div>
+                    <a
+                      href={deal.sponsorInfo.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      {deal.sponsorInfo.website}
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -345,27 +328,37 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
 
         {activeTab === 'documents' && (
           <div className="max-w-3xl">
-            <div className="space-y-3">
-              {deal.documents.map((doc, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded bg-gray-200 flex items-center justify-center">
-                      <span className="text-xs text-gray-600">PDF</span>
+            {deal.documents.length === 0 ? (
+              <div className="bg-gray-50 rounded-lg p-8 text-center">
+                <FileText size={32} className="mx-auto text-gray-400 mb-3" />
+                <p className="text-gray-500 text-sm">No documents uploaded yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {deal.documents.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded bg-gray-200 flex items-center justify-center">
+                        <span className="text-xs text-gray-600 uppercase">
+                          {doc.type.split('/').pop()?.slice(0, 3) || 'DOC'}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-sm text-black">{doc.name}</div>
+                        <div className="text-xs text-gray-500">{doc.size} • {doc.date}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-sm text-black">{doc.name}</div>
-                      <div className="text-xs text-gray-500">{doc.size} • {doc.date}</div>
-                    </div>
+                    <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-black transition-colors">
+                      <Download size={14} />
+                      Download
+                    </button>
                   </div>
-                  <button className="text-sm text-gray-600 hover:text-black transition-colors">
-                    Download
-                  </button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -387,20 +380,9 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
               </div>
             </div>
 
-            {/* Notes Timeline */}
-            <div className="space-y-4">
-              {deal.notes.map((note, index) => (
-                <div key={index} className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gray-300" />
-                      <span className="text-sm text-black">{note.author}</span>
-                    </div>
-                    <span className="text-xs text-gray-500">{note.date}</span>
-                  </div>
-                  <p className="text-sm text-gray-600">{note.text}</p>
-                </div>
-              ))}
+            {/* Notes placeholder */}
+            <div className="bg-gray-50 rounded-lg p-8 text-center">
+              <p className="text-gray-500 text-sm">No notes yet. Add your first note above.</p>
             </div>
           </div>
         )}
