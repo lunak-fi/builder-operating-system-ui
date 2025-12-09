@@ -1,56 +1,11 @@
 import { ExternalLink } from 'lucide-react';
+import type { RecentDeal } from '@/lib/useDashboardData';
 
 interface RecentActivityTableProps {
   onViewDeal: (dealId: string) => void;
+  deals: RecentDeal[];
+  isLoading?: boolean;
 }
-
-const mockRecentDeals = [
-  {
-    id: '1',
-    name: 'Riverside Commons',
-    sponsor: 'Atlas Development',
-    market: 'Charleston, SC',
-    gpCommit: '$350K',
-    stage: 'Due Diligence',
-    updated: '2 hours ago',
-  },
-  {
-    id: '2',
-    name: 'Harbor Point Residential',
-    sponsor: 'Coastal Partners',
-    market: 'Portland, OR',
-    gpCommit: '$425K',
-    stage: 'Term Sheet',
-    updated: '5 hours ago',
-  },
-  {
-    id: '3',
-    name: 'Midtown Plaza',
-    sponsor: 'Urban Capital',
-    market: 'Austin, TX',
-    gpCommit: '$275K',
-    stage: 'Under Review',
-    updated: '1 day ago',
-  },
-  {
-    id: '4',
-    name: 'Parkside Development',
-    sponsor: 'Summit Real Estate',
-    market: 'Nashville, TN',
-    gpCommit: '$400K',
-    stage: 'Committed',
-    updated: '2 days ago',
-  },
-  {
-    id: '5',
-    name: 'Gateway Center',
-    sponsor: 'Meridian Group',
-    market: 'Denver, CO',
-    gpCommit: '$500K',
-    stage: 'Received',
-    updated: '3 days ago',
-  },
-];
 
 const stageColors: Record<string, string> = {
   'Received': 'bg-gray-200 text-gray-700',
@@ -61,7 +16,40 @@ const stageColors: Record<string, string> = {
   'Passed': 'bg-purple-100 text-purple-700',
 };
 
-export function RecentActivityTable({ onViewDeal }: RecentActivityTableProps) {
+export function RecentActivityTable({ onViewDeal, deals, isLoading }: RecentActivityTableProps) {
+  if (isLoading) {
+    return (
+      <div className="bg-white animate-pulse">
+        {/* Table Header Skeleton */}
+        <div className="grid grid-cols-[2fr_1.5fr_1.5fr_1fr_1fr_1fr] gap-4 px-4 py-3 border-b border-gray-100">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-3 bg-gray-200 rounded w-16"></div>
+          ))}
+        </div>
+        {/* Table Rows Skeleton */}
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="grid grid-cols-[2fr_1.5fr_1.5fr_1fr_1fr_1fr] gap-4 px-4 py-4 border-b border-gray-50">
+            <div className="h-4 bg-gray-200 rounded w-32"></div>
+            <div className="h-4 bg-gray-200 rounded w-24"></div>
+            <div className="h-4 bg-gray-200 rounded w-24"></div>
+            <div className="h-4 bg-gray-200 rounded w-16"></div>
+            <div className="h-5 bg-gray-200 rounded-full w-20"></div>
+            <div className="h-4 bg-gray-200 rounded w-20"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (deals.length === 0) {
+    return (
+      <div className="bg-white py-12 text-center">
+        <p className="text-gray-500 text-sm">No deals in pipeline yet.</p>
+        <p className="text-gray-400 text-xs mt-1">Upload a deal to get started.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white">
       {/* Table Header */}
@@ -76,7 +64,7 @@ export function RecentActivityTable({ onViewDeal }: RecentActivityTableProps) {
 
       {/* Table Body */}
       <div>
-        {mockRecentDeals.map((deal) => (
+        {deals.map((deal) => (
           <div
             key={deal.id}
             className="grid grid-cols-[2fr_1.5fr_1.5fr_1fr_1fr_1fr] gap-4 px-4 py-4 hover:bg-gray-50 transition-colors cursor-pointer group"
@@ -90,7 +78,7 @@ export function RecentActivityTable({ onViewDeal }: RecentActivityTableProps) {
             <div className="text-sm text-gray-600">{deal.market}</div>
             <div className="text-sm text-black">{deal.gpCommit}</div>
             <div>
-              <span className={`text-xs px-2.5 py-1 rounded-full ${stageColors[deal.stage]}`}>
+              <span className={`text-xs px-2.5 py-1 rounded-full ${stageColors[deal.stage] || stageColors['Received']}`}>
                 {deal.stage}
               </span>
             </div>

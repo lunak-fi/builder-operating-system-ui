@@ -3,9 +3,20 @@ interface MetricCardProps {
   value: string;
   change?: string;
   hasIndicator?: boolean;
+  isLoading?: boolean;
 }
 
-export function MetricCard({ label, value, change, hasIndicator }: MetricCardProps) {
+export function MetricCard({ label, value, change, hasIndicator, isLoading }: MetricCardProps) {
+  if (isLoading) {
+    return (
+      <div className="bg-gray-50 rounded-lg px-6 py-5 animate-pulse">
+        <div className="h-3 bg-gray-200 rounded w-24 mb-3"></div>
+        <div className="h-8 bg-gray-200 rounded w-16 mb-2"></div>
+        <div className="h-3 bg-gray-200 rounded w-20"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50 rounded-lg px-6 py-5">
       <div className="text-xs text-gray-500 mb-2">{label}</div>
