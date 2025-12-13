@@ -1,10 +1,95 @@
-import { useState } from 'react';
-import { Upload, Check, FileText } from 'lucide-react';
+'use client';
+
+import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { Upload, Check, FileText, AlertCircle, Loader2 } from 'lucide-react';
+import { documentsAPI } from '@/lib/api';
+import type { ExtractionResponse } from '@/lib/types';
+
+type UploadState = 'idle' | 'uploading' | 'processing' | 'extracting' | 'success' | 'error';
 
 export function DealUpload() {
-  const [uploadState, setUploadState] = useState<'idle' | 'uploading' | 'success'>('idle');
-  const [progress, setProgress] = useState(0);
+  const router = useRouter();
+  const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [isDragging, setIsDragging] = useState(false);
+  const [fileName, setFileName] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [extractionResult, setExtractionResult] = useState<ExtractionResponse | null>(null);
+
+  const formatCurrency = (value: number | undefined) => {
+    if (!value) return 'N/A';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatPercent = (value: number | undefined) => {
+    if (!value) return 'N/A';
+    return `${(value * 100).toFixed(1)}%`;
+  };
+
+  const formatMultiple = (value: number | undefined) => {
+    if (!value) return 'N/A';
+    return `${value.toFixed(2)}x`;
+  };
+
+  const pollForCompletion = useCallback(async (documentId: string): Promise<void> => {
+    const maxAttempts = 60; // 2 minutes max
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      const status = await documentsAPI.getStatus(documentId);
+
+      if (status.parsing_status === 'completed') {
+        return;
+      }
+
+      if (status.parsing_status === 'failed') {
+        throw new Error(status.parsing_error || 'Document parsing failed');
+      }
+
+      // Wait 2 seconds before next poll
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      attempts++;
+    }
+
+    throw new Error('Document processing timed out');
+  }, []);
+
+  const handleUpload = async (file: File) => {
+    setFileName(file.name);
+    setErrorMessage('');
+    setExtractionResult(null);
+
+    try {
+      // Step 1: Upload the file
+      setUploadState('uploading');
+      const uploadResponse = await documentsAPI.upload(file);
+      const documentId = uploadResponse.id;
+
+      // Step 2: Poll for parsing completion
+      setUploadState('processing');
+      await pollForCompletion(documentId);
+
+      // Step 3: Extract data using AI
+      setUploadState('extracting');
+      const extractionResponse = await documentsAPI.extract(documentId);
+
+      if (!extractionResponse.success) {
+        throw new Error('Extraction failed');
+      }
+
+      setExtractionResult(extractionResponse);
+      setUploadState('success');
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Upload failed');
+      setUploadState('error');
+    }
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -18,52 +103,43 @@ export function DealUpload() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    handleUpload();
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handleUpload();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type === 'application/pdf') {
+      handleUpload(file);
+    } else {
+      setErrorMessage('Please upload a PDF file');
+      setUploadState('error');
     }
   };
 
-  const handleUpload = () => {
-    setUploadState('uploading');
-    setProgress(0);
-
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => setUploadState('success'), 200);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 150);
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleUpload(file);
+    }
   };
 
-  const extractedData = {
-    dealName: 'Riverside Commons',
-    sponsor: 'Atlas Development',
-    market: 'Charleston, SC',
-    strategy: 'Value-Add',
-    totalProjectCost: '$45,200,000',
-    gpCommitAsk: '$350,000',
-    irr: '19.2%',
-    equityMultiple: '2.1x',
+  const handleViewDeal = () => {
+    if (extractionResult?.populated_records.deal_id) {
+      router.push(`/deals/${extractionResult.populated_records.deal_id}`);
+    }
+  };
+
+  const handleReset = () => {
+    setUploadState('idle');
+    setFileName('');
+    setErrorMessage('');
+    setExtractionResult(null);
   };
 
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-[1400px] mx-auto px-8 py-8">
-        {/* Page Title */}
         <h1 className="mb-8">Upload Deal</h1>
 
+        {/* Idle State - Drop Zone */}
         {uploadState === 'idle' && (
           <div className="max-w-2xl mx-auto mt-20">
-            {/* Upload Zone */}
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -80,18 +156,18 @@ export function DealUpload() {
                 onChange={handleFileSelect}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
-              
+
               <div className="flex flex-col items-center">
                 <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-6">
                   <Upload size={28} className="text-gray-400" />
                 </div>
-                
+
                 <h2 className="text-2xl text-black mb-3">Upload Deal</h2>
-                
+
                 <p className="text-sm text-gray-500 mb-6">
                   Drop pitch deck PDF here, or click to browse
                 </p>
-                
+
                 <button className="px-6 py-2.5 bg-[#D4FF00] text-black text-sm rounded-lg hover:bg-[#C4EF00] transition-colors">
                   Choose file
                 </button>
@@ -104,33 +180,91 @@ export function DealUpload() {
           </div>
         )}
 
+        {/* Uploading State */}
         {uploadState === 'uploading' && (
+          <div className="max-w-2xl mx-auto mt-20">
+            <div className="bg-gray-50 rounded-xl p-12 text-center">
+              <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6 mx-auto">
+                <Loader2 size={28} className="text-gray-600 animate-spin" />
+              </div>
+
+              <h2 className="text-2xl text-black mb-3">Uploading...</h2>
+
+              <p className="text-sm text-gray-500">
+                Uploading {fileName}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Processing State */}
+        {uploadState === 'processing' && (
           <div className="max-w-2xl mx-auto mt-20">
             <div className="bg-gray-50 rounded-xl p-12 text-center">
               <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6 mx-auto">
                 <FileText size={28} className="text-gray-600" />
               </div>
-              
-              <h2 className="text-2xl text-black mb-3">Uploading...</h2>
-              
-              <p className="text-sm text-gray-500 mb-8">
-                Processing your deal document
+
+              <h2 className="text-2xl text-black mb-3">Processing PDF...</h2>
+
+              <p className="text-sm text-gray-500 mb-6">
+                Extracting text from your document
               </p>
-              
-              {/* Progress Bar */}
-              <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className="h-full bg-black transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
+
+              <div className="flex justify-center">
+                <Loader2 size={24} className="text-gray-400 animate-spin" />
               </div>
-              
-              <div className="mt-4 text-sm text-gray-500">{progress}%</div>
             </div>
           </div>
         )}
 
-        {uploadState === 'success' && (
+        {/* Extracting State */}
+        {uploadState === 'extracting' && (
+          <div className="max-w-2xl mx-auto mt-20">
+            <div className="bg-gray-50 rounded-xl p-12 text-center">
+              <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6 mx-auto">
+                <FileText size={28} className="text-gray-600" />
+              </div>
+
+              <h2 className="text-2xl text-black mb-3">Analyzing with AI...</h2>
+
+              <p className="text-sm text-gray-500 mb-6">
+                Extracting deal information from your document
+              </p>
+
+              <div className="flex justify-center">
+                <Loader2 size={24} className="text-gray-400 animate-spin" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {uploadState === 'error' && (
+          <div className="max-w-2xl mx-auto mt-20">
+            <div className="bg-red-50 rounded-xl p-12 text-center">
+              <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mb-6 mx-auto">
+                <AlertCircle size={28} className="text-red-500" />
+              </div>
+
+              <h2 className="text-2xl text-black mb-3">Upload Failed</h2>
+
+              <p className="text-sm text-red-600 mb-6">
+                {errorMessage}
+              </p>
+
+              <button
+                onClick={handleReset}
+                className="px-6 py-2.5 bg-[#D4FF00] text-black text-sm rounded-lg hover:bg-[#C4EF00] transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Success State */}
+        {uploadState === 'success' && extractionResult && (
           <div className="max-w-4xl mx-auto mt-12">
             {/* Success Message */}
             <div className="flex items-center gap-3 mb-8 pb-8 border-b border-gray-100">
@@ -138,7 +272,7 @@ export function DealUpload() {
                 <Check size={20} className="text-black" />
               </div>
               <div>
-                <h2 className="text-xl text-black">Deal uploaded successfully</h2>
+                <h2 className="text-xl text-black">Deal created successfully</h2>
                 <p className="text-sm text-gray-500">Here&apos;s what we extracted from your document</p>
               </div>
             </div>
@@ -150,19 +284,35 @@ export function DealUpload() {
                 <div className="grid grid-cols-2 gap-x-8 gap-y-6 bg-gray-50 rounded-lg p-6">
                   <div>
                     <div className="text-xs text-gray-500 mb-1">Deal Name</div>
-                    <div className="text-sm text-black">{extractedData.dealName}</div>
+                    <div className="text-sm text-black">{extractionResult.extracted_data.deal.deal_name || 'N/A'}</div>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500 mb-1">Sponsor</div>
-                    <div className="text-sm text-black">{extractedData.sponsor}</div>
+                    <div className="text-sm text-black">{extractionResult.extracted_data.operator.name || 'N/A'}</div>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500 mb-1">Market</div>
-                    <div className="text-sm text-black">{extractedData.market}</div>
+                    <div className="text-sm text-black">
+                      {extractionResult.extracted_data.deal.msa || extractionResult.extracted_data.deal.state || 'N/A'}
+                    </div>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500 mb-1">Strategy</div>
-                    <div className="text-sm text-black">{extractedData.strategy}</div>
+                    <div className="text-sm text-black">{extractionResult.extracted_data.deal.strategy_type || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Asset Type</div>
+                    <div className="text-sm text-black">{extractionResult.extracted_data.deal.asset_type || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 mb-1">Units / SF</div>
+                    <div className="text-sm text-black">
+                      {extractionResult.extracted_data.deal.num_units
+                        ? `${extractionResult.extracted_data.deal.num_units} units`
+                        : extractionResult.extracted_data.deal.building_sf
+                          ? `${extractionResult.extracted_data.deal.building_sf.toLocaleString()} SF`
+                          : 'N/A'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -172,34 +322,42 @@ export function DealUpload() {
                 <div className="grid grid-cols-2 gap-x-8 gap-y-6 bg-gray-50 rounded-lg p-6">
                   <div>
                     <div className="text-xs text-gray-500 mb-1">Total Project Cost</div>
-                    <div className="text-sm text-black">{extractedData.totalProjectCost}</div>
+                    <div className="text-sm text-black">
+                      {formatCurrency(extractionResult.extracted_data.underwriting.total_project_cost)}
+                    </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-1">GP Commit Ask</div>
-                    <div className="text-sm text-black">{extractedData.gpCommitAsk}</div>
+                    <div className="text-xs text-gray-500 mb-1">Equity Required</div>
+                    <div className="text-sm text-black">
+                      {formatCurrency(extractionResult.extracted_data.underwriting.equity_required)}
+                    </div>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500 mb-1">Projected IRR</div>
-                    <div className="text-sm text-black">{extractedData.irr}</div>
+                    <div className="text-sm text-black">
+                      {formatPercent(extractionResult.extracted_data.underwriting.levered_irr)}
+                    </div>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500 mb-1">Equity Multiple</div>
-                    <div className="text-sm text-black">{extractedData.equityMultiple}</div>
+                    <div className="text-sm text-black">
+                      {formatMultiple(extractionResult.extracted_data.underwriting.equity_multiple)}
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
-                <button className="px-6 py-2.5 bg-[#D4FF00] text-black text-sm rounded-lg hover:bg-[#C4EF00] transition-colors">
-                  Create Deal
-                </button>
-                <button className="px-6 py-2.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors">
-                  Edit Details
+                <button
+                  onClick={handleViewDeal}
+                  className="px-6 py-2.5 bg-[#D4FF00] text-black text-sm rounded-lg hover:bg-[#C4EF00] transition-colors"
+                >
+                  View Deal
                 </button>
                 <button
-                  onClick={() => setUploadState('idle')}
-                  className="px-6 py-2.5 text-gray-600 text-sm rounded-lg hover:bg-gray-50 transition-colors"
+                  onClick={handleReset}
+                  className="px-6 py-2.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Upload Another
                 </button>

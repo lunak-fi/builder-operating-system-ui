@@ -1,4 +1,4 @@
-import type { Deal, DealWithDetails, Operator, Underwriting, Document } from './types';
+import type { Deal, DealWithDetails, Operator, Underwriting, Document, DocumentUploadResponse, DocumentStatusResponse, ExtractionResponse } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -129,12 +129,10 @@ export const underwritingAPI = {
 
 // Documents API
 export const documentsAPI = {
-  upload: async (file: File, dealId?: string): Promise<Document> => {
+  // Upload a file and auto-create a deal
+  upload: async (file: File): Promise<DocumentUploadResponse> => {
     const formData = new FormData();
     formData.append('file', file);
-    if (dealId) {
-      formData.append('deal_id', dealId);
-    }
 
     const url = `${API_BASE_URL}/api/documents/upload`;
     const response = await fetch(url, {
@@ -151,12 +149,19 @@ export const documentsAPI = {
     return response.json();
   },
 
-  getByDeal: async (dealId: string): Promise<Document[]> => {
-    return fetchAPI<Document[]>(`/api/documents/deal/${dealId}`);
+  // Check document parsing status
+  getStatus: async (documentId: string): Promise<DocumentStatusResponse> => {
+    return fetchAPI<DocumentStatusResponse>(`/api/documents/${documentId}/status`);
   },
 
-  extract: async (documentId: string): Promise<{ success: boolean; message: string }> => {
-    return fetchAPI<{ success: boolean; message: string }>(`/api/documents/${documentId}/extract`, {
+  // Get documents for a deal
+  getByDeal: async (dealId: string): Promise<Document[]> => {
+    return fetchAPI<Document[]>(`/api/documents/deals/${dealId}/documents`);
+  },
+
+  // Extract data from document using AI
+  extract: async (documentId: string): Promise<ExtractionResponse> => {
+    return fetchAPI<ExtractionResponse>(`/api/documents/${documentId}/extract`, {
       method: 'POST',
     });
   },

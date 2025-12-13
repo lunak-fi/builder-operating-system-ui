@@ -104,3 +104,67 @@ export interface UploadDocumentRequest {
   file: File;
   deal_id?: string;
 }
+
+// Document upload response from backend
+export interface DocumentUploadResponse {
+  id: string;
+  deal_id: string;
+  document_type: string;
+  file_name: string;
+  file_url: string;
+  source_description: string | null;
+  parsed_text: string | null;
+  parsing_status: 'processing' | 'completed' | 'failed';
+  parsing_error: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Document status response
+export interface DocumentStatusResponse {
+  document_id: string;
+  parsing_status: 'processing' | 'completed' | 'failed';
+  parsing_error: string | null;
+  has_parsed_text: boolean;
+}
+
+// Extraction response from backend
+export interface ExtractionResponse {
+  success: boolean;
+  document_id: string;
+  extracted_data: {
+    operator: {
+      name: string;
+      legal_name?: string;
+      website_url?: string;
+      hq_city?: string;
+      hq_state?: string;
+      description?: string;
+    };
+    deal: {
+      deal_name: string;
+      state?: string;
+      msa?: string;
+      asset_type?: string;
+      strategy_type?: string;
+      num_units?: number;
+      building_sf?: number;
+      year_built?: number;
+      business_plan_summary?: string;
+      hold_period_years?: number;
+    };
+    underwriting: {
+      total_project_cost?: number;
+      equity_required?: number;
+      levered_irr?: number;
+      equity_multiple?: number;
+      loan_amount?: number;
+    };
+  };
+  populated_records: {
+    operator_id: string;
+    deal_id: string;
+    principal_ids: string[];
+    underwriting_id: string | null;
+  };
+}
