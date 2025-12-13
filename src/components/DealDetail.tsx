@@ -155,7 +155,7 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
               <div className="text-sm text-black">{deal.strategy}</div>
             </div>
             <div className="bg-gray-50 rounded-lg px-4 py-3">
-              <div className="text-xs text-gray-500 mb-1">GP Commit Ask</div>
+              <div className="text-xs text-gray-500 mb-1">Equity Required</div>
               <div className="text-sm text-black">{deal.gpCommitAsk}</div>
             </div>
           </div>
@@ -275,7 +275,7 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
                     <div className="text-xl text-black">{deal.returns.lpEquityRequired}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500 mb-2">GP Commit (Our Investment)</div>
+                    <div className="text-xs text-gray-500 mb-2">Equity Required</div>
                     <div className="text-xl text-black">{deal.returns.gpCommit}</div>
                   </div>
                   <div>

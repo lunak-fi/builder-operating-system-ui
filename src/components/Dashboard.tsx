@@ -33,7 +33,7 @@ export function Dashboard({ onViewDeal, onNavigate }: DashboardProps) {
   ];
 
   const metricsRow2 = [
-    { label: 'Pipeline Value', value: formatCurrency(metrics.pipelineValue), change: 'Potential GP commits' },
+    { label: 'Total Equity Pipeline', value: formatCurrency(metrics.pipelineValue), change: 'Equity required' },
     { label: 'Capital Deployed', value: formatCurrency(metrics.capitalDeployed), change: `${metrics.dealsCommitted} committed deals` },
     { label: 'Deals Passed', value: String(metrics.dealsPassed), change: 'Total passed' },
   ];

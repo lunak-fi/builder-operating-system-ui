@@ -216,7 +216,7 @@ export function SponsorDetail({ sponsorId, onBack, onDealClick }: SponsorDetailP
             <p className="text-2xl font-semibold text-red-600">{sponsor.dealsPassed}</p>
           </div>
           <div className="bg-gray-50 rounded-xl p-6">
-            <p className="text-xs text-gray-500 mb-1">Total GP Commit</p>
+            <p className="text-xs text-gray-500 mb-1">Total Equity Required</p>
             <p className="text-2xl font-semibold text-black">{sponsor.totalGPCommit}</p>
           </div>
         </div>
@@ -237,7 +237,7 @@ export function SponsorDetail({ sponsorId, onBack, onDealClick }: SponsorDetailP
                 <div className="text-xs text-gray-500">Market</div>
                 <div className="text-xs text-gray-500">Strategy</div>
                 <div className="text-xs text-gray-500">Total Cost</div>
-                <div className="text-xs text-gray-500">GP Commit</div>
+                <div className="text-xs text-gray-500">Equity Required</div>
                 <div className="text-xs text-gray-500">Stage</div>
               </div>
 

@@ -128,10 +128,32 @@ export interface DocumentStatusResponse {
   has_parsed_text: boolean;
 }
 
-// Extraction response from backend
+// Fund type for extraction response
+export interface Fund {
+  id: string;
+  operator_id: string;
+  name: string;
+  strategy: string | null;
+  target_irr: number | null;
+  target_equity_multiple: number | null;
+  target_geography: string | null;
+  target_asset_types: string | null;
+  fund_size: number | null;
+  gp_commitment: number | null;
+  management_fee: number | null;
+  carried_interest: number | null;
+  preferred_return: number | null;
+  status: string;
+  details_json: Record<string, any> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Extraction response from backend - supports both deal and fund
 export interface ExtractionResponse {
   success: boolean;
   document_id: string;
+  classification: 'deal' | 'fund';
   extracted_data: {
     operator: {
       name: string;
@@ -141,7 +163,8 @@ export interface ExtractionResponse {
       hq_state?: string;
       description?: string;
     };
-    deal: {
+    // Deal-specific fields (only present when classification === 'deal')
+    deal?: {
       deal_name: string;
       state?: string;
       msa?: string;
@@ -153,18 +176,34 @@ export interface ExtractionResponse {
       business_plan_summary?: string;
       hold_period_years?: number;
     };
-    underwriting: {
+    underwriting?: {
       total_project_cost?: number;
       equity_required?: number;
       levered_irr?: number;
       equity_multiple?: number;
       loan_amount?: number;
     };
+    // Fund-specific fields (only present when classification === 'fund')
+    fund?: {
+      name: string;
+      strategy?: string;
+      target_irr?: number;
+      target_equity_multiple?: number;
+      target_geography?: string;
+      target_asset_types?: string;
+      fund_size?: number;
+      gp_commitment?: number;
+      management_fee?: number;
+      carried_interest?: number;
+      preferred_return?: number;
+      details_json?: Record<string, any>;
+    };
   };
   populated_records: {
     operator_id: string;
-    deal_id: string;
+    deal_id?: string;
+    fund_id?: string;
     principal_ids: string[];
-    underwriting_id: string | null;
+    underwriting_id?: string | null;
   };
 }

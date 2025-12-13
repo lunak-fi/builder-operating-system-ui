@@ -119,8 +119,10 @@ export function DealUpload() {
     }
   };
 
-  const handleViewDeal = () => {
-    if (extractionResult?.populated_records.deal_id) {
+  const handleViewResult = () => {
+    if (extractionResult?.classification === 'fund' && extractionResult?.populated_records.fund_id) {
+      router.push(`/funds/${extractionResult.populated_records.fund_id}`);
+    } else if (extractionResult?.populated_records.deal_id) {
       router.push(`/deals/${extractionResult.populated_records.deal_id}`);
     }
   };
@@ -272,96 +274,165 @@ export function DealUpload() {
                 <Check size={20} className="text-black" />
               </div>
               <div>
-                <h2 className="text-xl text-black">Deal created successfully</h2>
+                <h2 className="text-xl text-black">
+                  {extractionResult.classification === 'fund' ? 'Fund created successfully' : 'Deal created successfully'}
+                </h2>
                 <p className="text-sm text-gray-500">Here&apos;s what we extracted from your document</p>
               </div>
             </div>
 
-            {/* Extracted Data */}
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg text-black mb-4">Deal Information</h3>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-6 bg-gray-50 rounded-lg p-6">
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Deal Name</div>
-                    <div className="text-sm text-black">{extractionResult.extracted_data.deal.deal_name || 'N/A'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Sponsor</div>
-                    <div className="text-sm text-black">{extractionResult.extracted_data.operator.name || 'N/A'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Market</div>
-                    <div className="text-sm text-black">
-                      {extractionResult.extracted_data.deal.msa || extractionResult.extracted_data.deal.state || 'N/A'}
+            {/* Extracted Data - Deal */}
+            {extractionResult.classification === 'deal' && extractionResult.extracted_data.deal && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg text-black mb-4">Deal Information</h3>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-6 bg-gray-50 rounded-lg p-6">
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Deal Name</div>
+                      <div className="text-sm text-black">{extractionResult.extracted_data.deal.deal_name || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Sponsor</div>
+                      <div className="text-sm text-black">{extractionResult.extracted_data.operator.name || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Market</div>
+                      <div className="text-sm text-black">
+                        {extractionResult.extracted_data.deal.msa || extractionResult.extracted_data.deal.state || 'N/A'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Strategy</div>
+                      <div className="text-sm text-black">{extractionResult.extracted_data.deal.strategy_type || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Asset Type</div>
+                      <div className="text-sm text-black">{extractionResult.extracted_data.deal.asset_type || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Units / SF</div>
+                      <div className="text-sm text-black">
+                        {extractionResult.extracted_data.deal.num_units
+                          ? `${extractionResult.extracted_data.deal.num_units} units`
+                          : extractionResult.extracted_data.deal.building_sf
+                            ? `${extractionResult.extracted_data.deal.building_sf.toLocaleString()} SF`
+                            : 'N/A'}
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Strategy</div>
-                    <div className="text-sm text-black">{extractionResult.extracted_data.deal.strategy_type || 'N/A'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Asset Type</div>
-                    <div className="text-sm text-black">{extractionResult.extracted_data.deal.asset_type || 'N/A'}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Units / SF</div>
-                    <div className="text-sm text-black">
-                      {extractionResult.extracted_data.deal.num_units
-                        ? `${extractionResult.extracted_data.deal.num_units} units`
-                        : extractionResult.extracted_data.deal.building_sf
-                          ? `${extractionResult.extracted_data.deal.building_sf.toLocaleString()} SF`
-                          : 'N/A'}
+                </div>
+
+                <div>
+                  <h3 className="text-lg text-black mb-4">Financial Metrics</h3>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-6 bg-gray-50 rounded-lg p-6">
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Total Project Cost</div>
+                      <div className="text-sm text-black">
+                        {formatCurrency(extractionResult.extracted_data.underwriting?.total_project_cost)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Equity Required</div>
+                      <div className="text-sm text-black">
+                        {formatCurrency(extractionResult.extracted_data.underwriting?.equity_required)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Projected IRR</div>
+                      <div className="text-sm text-black">
+                        {formatPercent(extractionResult.extracted_data.underwriting?.levered_irr)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Equity Multiple</div>
+                      <div className="text-sm text-black">
+                        {formatMultiple(extractionResult.extracted_data.underwriting?.equity_multiple)}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+            )}
 
-              <div>
-                <h3 className="text-lg text-black mb-4">Financial Metrics</h3>
-                <div className="grid grid-cols-2 gap-x-8 gap-y-6 bg-gray-50 rounded-lg p-6">
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Total Project Cost</div>
-                    <div className="text-sm text-black">
-                      {formatCurrency(extractionResult.extracted_data.underwriting.total_project_cost)}
+            {/* Extracted Data - Fund */}
+            {extractionResult.classification === 'fund' && extractionResult.extracted_data.fund && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg text-black mb-4">Fund Information</h3>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-6 bg-gray-50 rounded-lg p-6">
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Fund Name</div>
+                      <div className="text-sm text-black">{extractionResult.extracted_data.fund.name || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Sponsor</div>
+                      <div className="text-sm text-black">{extractionResult.extracted_data.operator.name || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Strategy</div>
+                      <div className="text-sm text-black">{extractionResult.extracted_data.fund.strategy || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Target Geography</div>
+                      <div className="text-sm text-black">{extractionResult.extracted_data.fund.target_geography || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Target Asset Types</div>
+                      <div className="text-sm text-black">{extractionResult.extracted_data.fund.target_asset_types || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Fund Size</div>
+                      <div className="text-sm text-black">{formatCurrency(extractionResult.extracted_data.fund.fund_size)}</div>
                     </div>
                   </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Equity Required</div>
-                    <div className="text-sm text-black">
-                      {formatCurrency(extractionResult.extracted_data.underwriting.equity_required)}
+                </div>
+
+                <div>
+                  <h3 className="text-lg text-black mb-4">Target Metrics</h3>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-6 bg-gray-50 rounded-lg p-6">
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Target IRR</div>
+                      <div className="text-sm text-black">
+                        {formatPercent(extractionResult.extracted_data.fund.target_irr)}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Projected IRR</div>
-                    <div className="text-sm text-black">
-                      {formatPercent(extractionResult.extracted_data.underwriting.levered_irr)}
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Target Equity Multiple</div>
+                      <div className="text-sm text-black">
+                        {formatMultiple(extractionResult.extracted_data.fund.target_equity_multiple)}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Equity Multiple</div>
-                    <div className="text-sm text-black">
-                      {formatMultiple(extractionResult.extracted_data.underwriting.equity_multiple)}
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">Preferred Return</div>
+                      <div className="text-sm text-black">
+                        {formatPercent(extractionResult.extracted_data.fund.preferred_return)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">GP Commitment</div>
+                      <div className="text-sm text-black">
+                        {formatCurrency(extractionResult.extracted_data.fund.gp_commitment)}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+            )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={handleViewDeal}
-                  className="px-6 py-2.5 bg-[#D4FF00] text-black text-sm rounded-lg hover:bg-[#C4EF00] transition-colors"
-                >
-                  View Deal
-                </button>
-                <button
-                  onClick={handleReset}
-                  className="px-6 py-2.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Upload Another
-                </button>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-6">
+              <button
+                onClick={handleViewResult}
+                className="px-6 py-2.5 bg-[#D4FF00] text-black text-sm rounded-lg hover:bg-[#C4EF00] transition-colors"
+              >
+                {extractionResult.classification === 'fund' ? 'View Fund' : 'View Deal'}
+              </button>
+              <button
+                onClick={handleReset}
+                className="px-6 py-2.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Upload Another
+              </button>
             </div>
           </div>
         )}

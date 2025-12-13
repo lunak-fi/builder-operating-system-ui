@@ -105,7 +105,7 @@ export function Portfolio({ onViewDeal }: PortfolioProps) {
               <div className="text-xs text-gray-500">Deal Name</div>
               <div className="text-xs text-gray-500">Sponsor</div>
               <div className="text-xs text-gray-500">Commitment Date</div>
-              <div className="text-xs text-gray-500">GP Commit</div>
+              <div className="text-xs text-gray-500">Equity Required</div>
               <div className="text-xs text-gray-500">GP Ownership</div>
               <div className="text-xs text-gray-500">Current Status</div>
               <div className="text-xs text-gray-500">Projected Exit</div>

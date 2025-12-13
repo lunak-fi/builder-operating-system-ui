@@ -57,7 +57,7 @@ export function RecentActivityTable({ onViewDeal, deals, isLoading }: RecentActi
         <div className="text-xs text-gray-500">Deal Name</div>
         <div className="text-xs text-gray-500">Sponsor</div>
         <div className="text-xs text-gray-500">Market</div>
-        <div className="text-xs text-gray-500">GP Commit</div>
+        <div className="text-xs text-gray-500">Equity Required</div>
         <div className="text-xs text-gray-500">Stage</div>
         <div className="text-xs text-gray-500">Updated</div>
       </div>

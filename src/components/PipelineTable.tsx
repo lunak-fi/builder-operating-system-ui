@@ -68,7 +68,7 @@ export function PipelineTable({ onViewDeal, deals, isLoading }: PipelineTablePro
         <div>Market</div>
         <div>Strategy</div>
         <div>Total Cost</div>
-        <div>GP Commit</div>
+        <div>Equity Required</div>
         <div>IRR</div>
         <div>Stage</div>
         <div>Days</div>

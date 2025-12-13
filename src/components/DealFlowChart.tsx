@@ -14,8 +14,8 @@ export function DealFlowChart({ months, isLoading }: DealFlowChartProps) {
           {[...Array(6)].map((_, i) => (
             <div key={i} className="flex-1 flex flex-col items-center gap-2">
               <div className="flex-1 w-full flex items-end justify-center gap-1.5">
-                <div className="w-full bg-gray-200 rounded-t" style={{ height: `${30 + Math.random() * 50}%` }} />
-                <div className="w-full bg-gray-300 rounded-t" style={{ height: `${20 + Math.random() * 30}%` }} />
+                <div className="w-full bg-gray-200 rounded-t" style={{ height: '60%' }} />
+                <div className="w-full bg-gray-300 rounded-t" style={{ height: '40%' }} />
               </div>
               <div className="h-3 bg-gray-200 rounded w-8"></div>
             </div>

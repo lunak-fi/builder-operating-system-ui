@@ -25,7 +25,7 @@ export function Pipeline({ onViewDeal }: PipelineProps) {
     { label: 'Stage', count: 6 },
     { label: 'Market', count: 12 },
     { label: 'Strategy', count: 4 },
-    { label: 'GP Commit Range', count: 0 },
+    { label: 'Equity Required Range', count: 0 },
   ];
 
   // Filter deals based on active tab and search query

@@ -120,7 +120,7 @@ export function Sponsors() {
             <div className="text-xs text-gray-500">Sponsor Name</div>
             <div className="text-xs text-gray-500">Submitted</div>
             <div className="text-xs text-gray-500">Committed</div>
-            <div className="text-xs text-gray-500">Total GP Commit</div>
+            <div className="text-xs text-gray-500">Total Equity Required</div>
             <div className="text-xs text-gray-500">Geography</div>
             <div className="text-xs text-gray-500">Last Activity</div>
             <div className="text-xs text-gray-500">Status</div>
