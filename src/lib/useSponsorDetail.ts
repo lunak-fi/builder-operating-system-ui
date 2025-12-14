@@ -54,7 +54,7 @@ export interface UseSponsorDetailResult {
 }
 
 // Helper: Format currency
-function formatCurrency(amount: number | string | null): string {
+function formatCurrency(amount: number | string | null | undefined): string {
   const num = Number(amount || 0);
   if (num === 0) return '$0';
   if (num >= 1000000000) {

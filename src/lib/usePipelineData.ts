@@ -105,7 +105,7 @@ function transformToPipelineDeals(
         strategy: deal.strategy_type || 'N/A',
         totalCost: formatCurrency(underwriting?.total_project_cost),
         gpCommit: formatCurrency(underwriting?.equity_required),
-        irr: formatPercentage(underwriting?.irr_net),
+        irr: formatPercentage(underwriting?.levered_irr),
         stage: mapStatusToStage(deal.status),
         daysInStage: calculateDaysInStage(deal.updated_at),
         lastUpdated: formatRelativeTime(deal.updated_at),
