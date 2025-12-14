@@ -20,6 +20,11 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
       throw new Error(error.detail || `API error: ${response.status}`);
     }
 
+    // Handle 204 No Content responses (e.g., DELETE)
+    if (response.status === 204 || response.headers.get('content-length') === '0') {
+      return undefined as T;
+    }
+
     return response.json();
   } catch (error) {
     console.error(`API request failed: ${endpoint}`, error);
