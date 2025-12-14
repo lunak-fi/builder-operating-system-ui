@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Inbox, Users, Briefcase, Upload, Settings } from 'lucide-react';
+import { LayoutDashboard, Inbox, Users, Briefcase, Upload, Settings, Landmark } from 'lucide-react';
 import { dealsAPI } from '@/lib/api';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -21,6 +21,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     { id: '/', label: 'Dashboard', icon: LayoutDashboard },
     { id: '/pipeline', label: 'Pipeline', icon: Inbox, badge: dealCount },
     { id: '/sponsors', label: 'Sponsors', icon: Users },
+    { id: '/funds', label: 'Funds', icon: Landmark },
     { id: '/portfolio', label: 'Portfolio', icon: Briefcase },
     { id: '/upload', label: 'Upload', icon: Upload },
   ];

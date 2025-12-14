@@ -80,11 +80,11 @@ function formatCurrency(amount: number | string | null | undefined): string {
   return `$${num.toLocaleString()}`;
 }
 
-// Helper: Format percentage
+// Helper: Format percentage (values stored as decimals, e.g., 0.245 = 24.5%)
 function formatPercentage(value: number | string | null | undefined): string {
   const num = Number(value || 0);
   if (num === 0) return '0.0%';
-  return `${num.toFixed(1)}%`;
+  return `${(num * 100).toFixed(1)}%`;
 }
 
 // Helper: Format file size

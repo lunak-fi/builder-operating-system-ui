@@ -149,6 +149,12 @@ export interface Fund {
   updated_at: string;
 }
 
+export interface FundWithDetails extends Fund {
+  operator?: Operator;
+  deals?: Deal[];
+  documents?: Document[];
+}
+
 // Extraction response from backend - supports both deal and fund
 export interface ExtractionResponse {
   success: boolean;

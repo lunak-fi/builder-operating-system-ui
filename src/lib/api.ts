@@ -1,4 +1,4 @@
-import type { Deal, DealWithDetails, Operator, Underwriting, Document, DocumentUploadResponse, DocumentStatusResponse, ExtractionResponse } from './types';
+import type { Deal, DealWithDetails, Operator, Underwriting, Document, DocumentUploadResponse, DocumentStatusResponse, ExtractionResponse, Fund } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -98,6 +98,34 @@ export const operatorsAPI = {
     return fetchAPI<Operator>(`/api/operators/${operatorId}`, {
       method: 'PUT',
       body: JSON.stringify(operatorData),
+    });
+  },
+};
+
+// Funds API
+export const fundsAPI = {
+  getAll: async (): Promise<Fund[]> => {
+    return fetchAPI<Fund[]>('/api/funds/');
+  },
+
+  get: async (fundId: string): Promise<Fund> => {
+    return fetchAPI<Fund>(`/api/funds/${fundId}`);
+  },
+
+  getDeals: async (fundId: string): Promise<Deal[]> => {
+    return fetchAPI<Deal[]>(`/api/funds/${fundId}/deals`);
+  },
+
+  update: async (fundId: string, fundData: Partial<Fund>): Promise<Fund> => {
+    return fetchAPI<Fund>(`/api/funds/${fundId}`, {
+      method: 'PUT',
+      body: JSON.stringify(fundData),
+    });
+  },
+
+  delete: async (fundId: string): Promise<void> => {
+    return fetchAPI<void>(`/api/funds/${fundId}`, {
+      method: 'DELETE',
     });
   },
 };
@@ -212,6 +240,7 @@ export const compositeAPI = {
 export default {
   deals: dealsAPI,
   operators: operatorsAPI,
+  funds: fundsAPI,
   underwriting: underwritingAPI,
   documents: documentsAPI,
   composite: compositeAPI,
