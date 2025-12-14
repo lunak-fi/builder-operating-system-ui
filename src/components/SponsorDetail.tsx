@@ -1,15 +1,16 @@
 'use client';
 
-import { ArrowLeft, ExternalLink, RefreshCw, Building2, MapPin, Globe, Briefcase } from 'lucide-react';
-import { useSponsorDetail, SponsorDeal } from '@/lib/useSponsorDetail';
+import { ArrowLeft, ExternalLink, RefreshCw, Building2, MapPin, Globe, Briefcase, TrendingUp, Target } from 'lucide-react';
+import { useSponsorDetail, SponsorDeal, SponsorFund } from '@/lib/useSponsorDetail';
 
 interface SponsorDetailProps {
   sponsorId: string;
   onBack: () => void;
   onDealClick?: (dealId: string) => void;
+  onFundClick?: (fundId: string) => void;
 }
 
-export function SponsorDetail({ sponsorId, onBack, onDealClick }: SponsorDetailProps) {
+export function SponsorDetail({ sponsorId, onBack, onDealClick, onFundClick }: SponsorDetailProps) {
   const { sponsor, isLoading, error, refetch } = useSponsorDetail(sponsorId);
 
   const stageColors: Record<string, string> = {
@@ -19,6 +20,12 @@ export function SponsorDetail({ sponsorId, onBack, onDealClick }: SponsorDetailP
     'Term Sheet': 'bg-orange-100 text-orange-700',
     'Committed': 'bg-green-100 text-green-700',
     'Passed': 'bg-red-100 text-red-700',
+  };
+
+  const fundStatusColors: Record<string, string> = {
+    'Active': 'bg-green-100 text-green-700',
+    'Fundraising': 'bg-blue-100 text-blue-700',
+    'Closed': 'bg-gray-200 text-gray-700',
   };
 
   // Loading skeleton
@@ -221,7 +228,49 @@ export function SponsorDetail({ sponsorId, onBack, onDealClick }: SponsorDetailP
           </div>
         </div>
 
-        {/* Deals Table */}
+        {/* Funds Cards */}
+        <div className="mb-8">
+          <h2 className="text-lg font-medium text-black mb-4">Funds</h2>
+
+          {sponsor.funds.length === 0 ? (
+            <div className="border border-gray-100 rounded-xl py-12 text-center">
+              <p className="text-gray-500 text-sm">No funds from this sponsor yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sponsor.funds.map((fund: SponsorFund) => (
+                <div
+                  key={fund.id}
+                  onClick={() => onFundClick?.(fund.id)}
+                  className="border border-gray-100 rounded-xl p-5 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer group"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="text-sm font-medium text-black group-hover:text-blue-600 transition-colors">{fund.name}</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">{fund.strategy}</p>
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${fundStatusColors[fund.status] || 'bg-gray-200 text-gray-700'}`}>
+                      {fund.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 mb-2">
+                    <div className="flex items-center gap-1">
+                      <TrendingUp size={12} className="text-gray-400" />
+                      <span className="text-sm text-black">{fund.targetIRR}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Target size={12} className="text-gray-400" />
+                      <span className="text-sm text-black">{fund.targetMultiple}</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">{fund.fundSize}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Deals Cards */}
         <div>
           <h2 className="text-lg font-medium text-black mb-4">Deals</h2>
 
@@ -230,46 +279,42 @@ export function SponsorDetail({ sponsorId, onBack, onDealClick }: SponsorDetailP
               <p className="text-gray-500 text-sm">No deals from this sponsor yet.</p>
             </div>
           ) : (
-            <div className="border border-gray-100 rounded-xl overflow-hidden">
-              {/* Table Header */}
-              <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 px-4 py-3 bg-gray-50 border-b border-gray-100">
-                <div className="text-xs text-gray-500">Deal Name</div>
-                <div className="text-xs text-gray-500">Market</div>
-                <div className="text-xs text-gray-500">Strategy</div>
-                <div className="text-xs text-gray-500">Total Cost</div>
-                <div className="text-xs text-gray-500">Equity Required</div>
-                <div className="text-xs text-gray-500">Stage</div>
-              </div>
-
-              {/* Table Body */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sponsor.deals.map((deal: SponsorDeal) => (
                 <div
                   key={deal.id}
                   onClick={() => onDealClick?.(deal.id)}
-                  className="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_1fr] gap-4 px-4 py-4 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-50 last:border-b-0"
+                  className="border border-gray-100 rounded-xl p-5 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer group"
                 >
-                  <div className="text-sm text-black truncate" title={deal.name}>{deal.name}</div>
-                  <div className="text-sm text-gray-600 truncate" title={deal.market}>{deal.market}</div>
-                  <div className="text-sm text-gray-600">{deal.strategy}</div>
-                  <div className="text-sm text-black">{deal.totalCost}</div>
-                  <div className="text-sm text-black">{deal.gpCommit}</div>
-                  <div>
-                    <span className={`text-xs px-2.5 py-1 rounded-full ${stageColors[deal.stage] || 'bg-gray-100 text-gray-700'}`}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="text-sm font-medium text-black group-hover:text-blue-600 transition-colors">{deal.name}</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">{deal.market}</p>
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${stageColors[deal.stage] || 'bg-gray-100 text-gray-700'}`}>
                       {deal.stage}
                     </span>
                   </div>
+                  <div className="flex items-center gap-4 mb-2">
+                    <span className="text-xs text-gray-500">{deal.strategy}</span>
+                    <span className="text-sm text-black">{deal.totalCost}</span>
+                  </div>
+                  <p className="text-sm text-gray-600">{deal.gpCommit} equity</p>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Footer with last updated info */}
-        {sponsor.deals.length > 0 && (
-          <div className="mt-4 text-xs text-gray-400">
-            Showing {sponsor.deals.length} deal{sponsor.deals.length !== 1 ? 's' : ''}
-          </div>
-        )}
+        {/* Footer with counts */}
+        <div className="mt-6 flex gap-6 text-xs text-gray-400">
+          {sponsor.funds.length > 0 && (
+            <span>{sponsor.funds.length} fund{sponsor.funds.length !== 1 ? 's' : ''}</span>
+          )}
+          {sponsor.deals.length > 0 && (
+            <span>{sponsor.deals.length} deal{sponsor.deals.length !== 1 ? 's' : ''}</span>
+          )}
+        </div>
       </div>
     </div>
   );

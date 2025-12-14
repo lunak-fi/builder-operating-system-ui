@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { dealsAPI, operatorsAPI, underwritingAPI } from './api';
-import type { Deal, Operator, Underwriting } from './types';
+import { dealsAPI, operatorsAPI, underwritingAPI, fundsAPI } from './api';
+import type { Deal, Operator, Underwriting, Fund } from './types';
 
 // Types for sponsor detail data
 export interface SponsorDeal {
@@ -14,6 +14,16 @@ export interface SponsorDeal {
   gpCommit: string;
   stage: string;
   lastUpdated: string;
+}
+
+export interface SponsorFund {
+  id: string;
+  name: string;
+  strategy: string;
+  targetIRR: string;
+  targetMultiple: string;
+  fundSize: string;
+  status: string;
 }
 
 export interface SponsorDetailData {
@@ -30,6 +40,8 @@ export interface SponsorDetailData {
   dealsCommitted: number;
   dealsPassed: number;
   totalGPCommit: string;
+  // Funds list
+  funds: SponsorFund[];
   // Deals list
   deals: SponsorDeal[];
 }
@@ -42,15 +54,33 @@ export interface UseSponsorDetailResult {
 }
 
 // Helper: Format currency
-function formatCurrency(amount: number): string {
-  if (amount === 0) return '$0';
-  if (amount >= 1000000) {
-    return `$${(amount / 1000000).toFixed(1)}M`;
+function formatCurrency(amount: number | string | null): string {
+  const num = Number(amount || 0);
+  if (num === 0) return '$0';
+  if (num >= 1000000000) {
+    return `$${(num / 1000000000).toFixed(1)}B`;
   }
-  if (amount >= 1000) {
-    return `$${(amount / 1000).toFixed(0)}K`;
+  if (num >= 1000000) {
+    return `$${(num / 1000000).toFixed(0)}M`;
   }
-  return `$${amount.toLocaleString()}`;
+  if (num >= 1000) {
+    return `$${(num / 1000).toFixed(0)}K`;
+  }
+  return `$${num.toLocaleString()}`;
+}
+
+// Helper: Format percentage (values stored as decimals, e.g., 0.245 = 24.5%)
+function formatPercent(value: number | string | null): string {
+  const num = Number(value || 0);
+  if (num === 0) return '-';
+  return `${(num * 100).toFixed(1)}%`;
+}
+
+// Helper: Format multiple
+function formatMultiple(value: number | string | null): string {
+  const num = Number(value || 0);
+  if (num === 0) return '-';
+  return `${num.toFixed(2)}x`;
 }
 
 // Helper: Format relative time
@@ -87,7 +117,8 @@ function mapStatusToStage(status: string | null): string {
 function transformSponsorData(
   operator: Operator,
   deals: Deal[],
-  underwritings: Map<string, Underwriting>
+  underwritings: Map<string, Underwriting>,
+  funds: Fund[]
 ): SponsorDetailData {
   // Get deals for this operator
   const operatorDeals = deals.filter(d => d.operator_id === operator.id);
@@ -117,12 +148,26 @@ function transformSponsorData(
         name: deal.deal_name,
         market: marketParts.join(', ') || 'Unknown',
         strategy: deal.strategy_type || 'N/A',
-        totalCost: formatCurrency(Number(underwriting?.total_project_cost || 0)),
-        gpCommit: formatCurrency(Number(underwriting?.equity_required || 0)),
+        totalCost: formatCurrency(underwriting?.total_project_cost),
+        gpCommit: formatCurrency(underwriting?.equity_required),
         stage: mapStatusToStage(deal.status),
         lastUpdated: formatRelativeTime(deal.updated_at),
       };
     });
+
+  // Transform funds to display format
+  const operatorFunds = funds.filter(f => f.operator_id === operator.id);
+  const sponsorFunds: SponsorFund[] = operatorFunds
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .map(fund => ({
+      id: fund.id,
+      name: fund.name,
+      strategy: fund.strategy || 'N/A',
+      targetIRR: formatPercent(fund.target_irr),
+      targetMultiple: formatMultiple(fund.target_equity_multiple),
+      fundSize: formatCurrency(fund.fund_size),
+      status: fund.status,
+    }));
 
   return {
     id: operator.id,
@@ -137,6 +182,7 @@ function transformSponsorData(
     dealsCommitted,
     dealsPassed,
     totalGPCommit: formatCurrency(totalGPCommit),
+    funds: sponsorFunds,
     deals: sponsorDeals,
   };
 }
@@ -159,14 +205,15 @@ export function useSponsorDetail(sponsorId: string | null): UseSponsorDetailResu
 
     try {
       // Fetch all data in parallel
-      const [operator, deals, underwritings] = await Promise.all([
+      const [operator, deals, underwritings, funds] = await Promise.all([
         operatorsAPI.get(sponsorId),
         dealsAPI.getAll(),
         underwritingAPI.getAll(),
+        fundsAPI.getAll(),
       ]);
 
       const underwritingMap = new Map(underwritings.map(u => [u.deal_id, u]));
-      const transformedSponsor = transformSponsorData(operator, deals, underwritingMap);
+      const transformedSponsor = transformSponsorData(operator, deals, underwritingMap, funds);
       setSponsor(transformedSponsor);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load sponsor details');

@@ -16,5 +16,16 @@ export default function SponsorDetailPage() {
     router.push(`/deals/${dealId}`);
   };
 
-  return <SponsorDetail sponsorId={sponsorId} onBack={handleBack} onDealClick={handleDealClick} />;
+  const handleFundClick = (fundId: string) => {
+    router.push(`/funds/${fundId}`);
+  };
+
+  return (
+    <SponsorDetail
+      sponsorId={sponsorId}
+      onBack={handleBack}
+      onDealClick={handleDealClick}
+      onFundClick={handleFundClick}
+    />
+  );
 }
