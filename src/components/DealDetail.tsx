@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, ArrowRight, Edit, RefreshCw, FileText, Download } from 'lucide-react';
+import { ChevronLeft, ArrowRight, Edit, RefreshCw, FileText, Download, Trash2 } from 'lucide-react';
 import { useDealDetail } from '@/lib/useDealDetail';
+import { dealsAPI } from '@/lib/api';
 
 interface DealDetailProps {
   dealId: string | null;
@@ -21,7 +22,28 @@ const stageColors: Record<string, string> = {
 export function DealDetail({ dealId, onBack }: DealDetailProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'financials' | 'sponsor' | 'documents' | 'notes'>('overview');
   const [noteText, setNoteText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
   const { deal, isLoading, error, refetch } = useDealDetail(dealId);
+
+  const handleDelete = async () => {
+    if (!dealId) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${deal?.name}"? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      await dealsAPI.delete(dealId);
+      onBack(); // Navigate back to pipeline after deletion
+    } catch (err) {
+      console.error('Failed to delete deal:', err);
+      alert('Failed to delete deal. Please try again.');
+      setIsDeleting(false);
+    }
+  };
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
@@ -136,6 +158,14 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
               </button>
               <button className="p-2.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
                 <Edit size={16} />
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="p-2.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Delete deal"
+              >
+                <Trash2 size={16} />
               </button>
             </div>
           </div>
