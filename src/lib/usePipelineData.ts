@@ -41,7 +41,8 @@ function formatCurrency(amount: number | string | null | undefined): string {
 // Helper: Format percentage
 function formatPercentage(value: number | string | null | undefined): string {
   const num = Number(value || 0);
-  return `${num.toFixed(1)}%`;
+  // Values are stored as decimals (0.245 = 24.5%), multiply by 100 for display
+  return `${(num * 100).toFixed(1)}%`;
 }
 
 // Helper: Format relative time
