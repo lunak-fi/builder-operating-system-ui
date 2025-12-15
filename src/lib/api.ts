@@ -138,7 +138,7 @@ export const fundsAPI = {
 // Underwriting API
 export const underwritingAPI = {
   getByDeal: async (dealId: string): Promise<Underwriting> => {
-    return fetchAPI<Underwriting>(`/api/underwriting/deal/${dealId}/`);
+    return fetchAPI<Underwriting>(`/api/underwriting/deal/${dealId}`);
   },
 
   getAll: async (): Promise<Underwriting[]> => {
