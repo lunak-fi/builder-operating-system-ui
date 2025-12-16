@@ -19,6 +19,19 @@ const stageColors: Record<string, string> = {
   'Passed': 'bg-purple-100 text-purple-700',
 };
 
+// Helper function to get labels based on strategy
+function getFinancialsLabels(strategy: string) {
+  const isDevelopment = strategy?.toLowerCase().includes('development') ||
+                       strategy?.toLowerCase().includes('ground-up');
+
+  return {
+    landCost: isDevelopment ? 'Land Acquisition' : 'Acquisition Price',
+    hardCost: isDevelopment ? 'Construction Costs' : 'Renovation Budget',
+    softCost: isDevelopment ? 'Soft Costs' : 'Closing Costs',
+    totalCost: isDevelopment ? 'Total Development Cost' : 'Total Investment'
+  };
+}
+
 export function DealDetail({ dealId, onBack }: DealDetailProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'financials' | 'sponsor' | 'documents' | 'notes'>('overview');
   const [noteText, setNoteText] = useState('');
@@ -264,57 +277,62 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
 
         {activeTab === 'financials' && (
           <div className="max-w-5xl">
-            <div className="grid grid-cols-2 gap-8 mb-12">
-              {/* Project Costs */}
-              <div>
-                <h3 className="mb-6">Project Costs</h3>
-                <div className="space-y-6">
-                  <div className="pb-6 border-b border-gray-100">
-                    <div className="text-xs text-gray-500 mb-2">Total Project Cost</div>
-                    <div className="text-3xl text-black">{deal.costs.totalProjectCost}</div>
-                  </div>
+            {(() => {
+              const labels = getFinancialsLabels(deal.strategy);
+              return (
+                <div className="grid grid-cols-2 gap-8 mb-12">
+                  {/* Project Costs */}
                   <div>
-                    <div className="text-xs text-gray-500 mb-2">Acquisition/Land Cost</div>
-                    <div className="text-xl text-black">{deal.costs.acquisitionPrice}</div>
+                    <h3 className="mb-6">Project Costs</h3>
+                    <div className="space-y-6">
+                      <div className="pb-6 border-b border-gray-100">
+                        <div className="text-xs text-gray-500 mb-2">{labels.totalCost}</div>
+                        <div className="text-3xl text-black">{deal.costs.totalProjectCost}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-2">{labels.landCost}</div>
+                        <div className="text-xl text-black">{deal.costs.acquisitionPrice}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-2">{labels.hardCost}</div>
+                        <div className="text-xl text-black">{deal.costs.hardCosts}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-2">{labels.softCost}</div>
+                        <div className="text-xl text-black">{deal.costs.softCosts}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-2">Loan Amount</div>
+                        <div className="text-xl text-black">{deal.costs.loanAmount}</div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-2">Hard Costs</div>
-                    <div className="text-xl text-black">{deal.costs.hardCosts}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-2">Soft Costs</div>
-                    <div className="text-xl text-black">{deal.costs.softCosts}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-2">Loan Amount</div>
-                    <div className="text-xl text-black">{deal.costs.loanAmount}</div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Returns */}
-              <div>
-                <h3 className="mb-6">Projected Returns</h3>
-                <div className="space-y-6">
-                  <div className="pb-6 border-b border-gray-100">
-                    <div className="text-xs text-gray-500 mb-2">Projected IRR (Levered)</div>
-                    <div className="text-3xl text-black">{deal.returns.projectedIRR}</div>
-                  </div>
+                  {/* Returns */}
                   <div>
-                    <div className="text-xs text-gray-500 mb-2">LP Equity Required</div>
-                    <div className="text-xl text-black">{deal.returns.lpEquityRequired}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-2">Equity Required</div>
-                    <div className="text-xl text-black">{deal.returns.gpCommit}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-2">Equity Multiple</div>
-                    <div className="text-xl text-black">{deal.returns.equityMultiple}</div>
+                    <h3 className="mb-6">Projected Returns</h3>
+                    <div className="space-y-6">
+                      <div className="pb-6 border-b border-gray-100">
+                        <div className="text-xs text-gray-500 mb-2">Projected IRR (Levered)</div>
+                        <div className="text-3xl text-black">{deal.returns.projectedIRR}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-2">LP Equity Required</div>
+                        <div className="text-xl text-black">{deal.returns.lpEquityRequired}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-2">Equity Required</div>
+                        <div className="text-xl text-black">{deal.returns.gpCommit}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-2">Equity Multiple</div>
+                        <div className="text-xl text-black">{deal.returns.equityMultiple}</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              );
+            })()}
           </div>
         )}
 
