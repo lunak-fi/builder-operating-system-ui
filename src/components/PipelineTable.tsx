@@ -98,7 +98,7 @@ export function PipelineTable({ onViewDeal, deals, isLoading }: PipelineTablePro
             <div className="text-sm text-gray-600 truncate" title={deal.market}>{deal.market}</div>
             <div className="text-sm text-gray-600 truncate" title={deal.strategy}>{deal.strategy}</div>
             <div className="text-sm text-black">{deal.totalCost}</div>
-            <div className="text-sm text-black">{deal.gpCommit}</div>
+            <div className="text-sm text-black">{deal.equityRequired}</div>
             <div className="text-sm text-black">{deal.irr}</div>
             <div>
               <span className={`text-xs px-2.5 py-1 rounded-full whitespace-nowrap ${stageColors[deal.stage] || stageColors['Received']}`}>

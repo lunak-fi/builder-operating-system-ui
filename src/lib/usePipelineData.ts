@@ -12,7 +12,7 @@ export interface PipelineDeal {
   market: string;
   strategy: string;
   totalCost: string;
-  gpCommit: string;
+  equityRequired: string;
   irr: string;
   stage: string;
   daysInStage: number;
@@ -43,6 +43,37 @@ function formatPercentage(value: number | string | null | undefined): string {
   const num = Number(value || 0);
   // Values are stored as decimals (0.245 = 24.5%), multiply by 100 for display
   return `${(num * 100).toFixed(1)}%`;
+}
+
+// Helper: Parse currency string back to number
+export function parseCurrencyToNumber(currency: string): number {
+  if (!currency || currency === '$0') return 0;
+
+  // Remove $ and any spaces
+  const cleaned = currency.replace(/\$|,/g, '').trim();
+
+  // Handle M (millions) and K (thousands)
+  if (cleaned.endsWith('M')) {
+    return parseFloat(cleaned.slice(0, -1)) * 1000000;
+  }
+  if (cleaned.endsWith('K')) {
+    return parseFloat(cleaned.slice(0, -1)) * 1000;
+  }
+
+  // Plain number
+  return parseFloat(cleaned) || 0;
+}
+
+// Helper: Parse percentage string back to decimal
+export function parsePercentageToNumber(percentage: string): number {
+  if (!percentage) return 0;
+
+  // Remove % and any spaces
+  const cleaned = percentage.replace('%', '').trim();
+  const num = parseFloat(cleaned);
+
+  // Convert percentage to decimal (24.5% → 0.245)
+  return (num / 100) || 0;
 }
 
 // Helper: Format relative time
@@ -106,7 +137,7 @@ function transformToPipelineDeals(
         market,
         strategy: deal.strategy_type || 'N/A',
         totalCost: formatCurrency(underwriting?.total_project_cost),
-        gpCommit: formatCurrency(underwriting?.equity_required),
+        equityRequired: formatCurrency(underwriting?.equity_required),
         irr: formatPercentage(underwriting?.levered_irr),
         stage: mapStatusToStage(deal.status),
         daysInStage: calculateDaysInStage(deal.updated_at),

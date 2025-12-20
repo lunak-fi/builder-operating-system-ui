@@ -1,9 +1,15 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, ChevronDown, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 import { PipelineTable } from './PipelineTable';
-import { usePipelineData } from '@/lib/usePipelineData';
+import { usePipelineData, parseCurrencyToNumber, parsePercentageToNumber } from '@/lib/usePipelineData';
+import { usePipelineFilters } from '@/lib/usePipelineFilters';
+import { MultiSelectFilter } from './MultiSelectFilter';
+import { EquityRangeFilter, EQUITY_RANGES } from './EquityRangeFilter';
+import { SortDropdown } from './SortDropdown';
+import type { SortOption } from './SortDropdown';
+import type { PipelineDeal } from '@/lib/usePipelineData';
 
 interface PipelineProps {
   onViewDeal: (dealId: string) => void;
@@ -21,38 +27,96 @@ export function Pipeline({ onViewDeal }: PipelineProps) {
     { id: 'passed', label: 'Passed' },
   ] as const;
 
-  const filters = [
-    { label: 'Stage', count: 6 },
-    { label: 'Market', count: 12 },
-    { label: 'Strategy', count: 4 },
-    { label: 'Equity Required Range', count: 0 },
-  ];
+  // Initialize filters hook
+  const {
+    filters,
+    availableStages,
+    availableMarkets,
+    availableStrategies,
+    setStageFilter,
+    setMarketFilter,
+    setStrategyFilter,
+    setEquityRangeFilter,
+    setSortBy,
+  } = usePipelineFilters(deals);
 
-  // Filter deals based on active tab and search query
-  const filteredDeals = useMemo(() => {
-    let filtered = deals;
+  // Helper: Sort deals based on selected option
+  const sortDeals = (dealsToSort: PipelineDeal[], sortBy: SortOption): PipelineDeal[] => {
+    const sorted = [...dealsToSort];
 
-    // Filter by tab
+    switch (sortBy) {
+      case 'recent':
+        // Already sorted by default in usePipelineData
+        return sorted;
+
+      case 'name-asc':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+
+      case 'irr-desc':
+        return sorted.sort((a, b) => {
+          const irrA = parsePercentageToNumber(a.irr);
+          const irrB = parsePercentageToNumber(b.irr);
+          return irrB - irrA; // Descending
+        });
+
+      default:
+        return sorted;
+    }
+  };
+
+  // Filter and sort deals based on all active filters
+  const filteredAndSortedDeals = useMemo(() => {
+    let result = deals;
+
+    // 1. Filter by tab
     if (activeTab === 'active') {
-      filtered = filtered.filter(deal => !['Committed', 'Passed'].includes(deal.stage));
+      result = result.filter(deal => !['Committed', 'Passed'].includes(deal.stage));
     } else if (activeTab === 'committed') {
-      filtered = filtered.filter(deal => deal.stage === 'Committed');
+      result = result.filter(deal => deal.stage === 'Committed');
     } else if (activeTab === 'passed') {
-      filtered = filtered.filter(deal => deal.stage === 'Passed');
+      result = result.filter(deal => deal.stage === 'Passed');
     }
 
-    // Filter by search query
+    // 2. Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(deal =>
+      result = result.filter(deal =>
         deal.name.toLowerCase().includes(query) ||
         deal.sponsor.toLowerCase().includes(query) ||
         deal.market.toLowerCase().includes(query)
       );
     }
 
-    return filtered;
-  }, [deals, activeTab, searchQuery]);
+    // 3. Filter by stage
+    if (filters.stages.length > 0) {
+      result = result.filter(deal => filters.stages.includes(deal.stage));
+    }
+
+    // 4. Filter by market
+    if (filters.markets.length > 0) {
+      result = result.filter(deal => filters.markets.includes(deal.market));
+    }
+
+    // 5. Filter by strategy
+    if (filters.strategies.length > 0) {
+      result = result.filter(deal => filters.strategies.includes(deal.strategy));
+    }
+
+    // 6. Filter by equity range
+    if (filters.equityRanges.length > 0) {
+      result = result.filter(deal => {
+        const equity = parseCurrencyToNumber(deal.equityRequired);
+        return filters.equityRanges.some(rangeLabel => {
+          const range = EQUITY_RANGES.find(r => r.label === rangeLabel);
+          if (!range) return false;
+          return equity >= range.min && equity < range.max;
+        });
+      });
+    }
+
+    // 7. Sort
+    return sortDeals(result, filters.sortBy);
+  }, [deals, activeTab, searchQuery, filters]);
 
   // Calculate tab counts
   const tabCounts = useMemo(() => ({
@@ -61,6 +125,48 @@ export function Pipeline({ onViewDeal }: PipelineProps) {
     committed: deals.filter(d => d.stage === 'Committed').length,
     passed: deals.filter(d => d.stage === 'Passed').length,
   }), [deals]);
+
+  // Calculate dynamic filter counts based on currently filtered data (after tab + search)
+  const tabAndSearchFilteredDeals = useMemo(() => {
+    let result = deals;
+
+    // Filter by tab
+    if (activeTab === 'active') {
+      result = result.filter(deal => !['Committed', 'Passed'].includes(deal.stage));
+    } else if (activeTab === 'committed') {
+      result = result.filter(deal => deal.stage === 'Committed');
+    } else if (activeTab === 'passed') {
+      result = result.filter(deal => deal.stage === 'Passed');
+    }
+
+    // Filter by search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(deal =>
+        deal.name.toLowerCase().includes(query) ||
+        deal.sponsor.toLowerCase().includes(query) ||
+        deal.market.toLowerCase().includes(query)
+      );
+    }
+
+    return result;
+  }, [deals, activeTab, searchQuery]);
+
+  const filterCounts = useMemo(() => {
+    const stageSet = new Set(tabAndSearchFilteredDeals.map(d => d.stage));
+    const marketSet = new Set(tabAndSearchFilteredDeals.map(d => d.market));
+    const strategySet = new Set(tabAndSearchFilteredDeals.map(d => d.strategy));
+    const equityCount = tabAndSearchFilteredDeals.filter(d =>
+      parseCurrencyToNumber(d.equityRequired) > 0
+    ).length;
+
+    return {
+      stage: stageSet.size,
+      market: marketSet.size,
+      strategy: strategySet.size,
+      equity: equityCount,
+    };
+  }, [tabAndSearchFilteredDeals]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -124,29 +230,43 @@ export function Pipeline({ onViewDeal }: PipelineProps) {
               </div>
 
               {/* Filter Pills */}
-              {filters.map((filter) => (
-                <button
-                  key={filter.label}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gray-50 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  {filter.label}
-                  <ChevronDown size={14} className="text-gray-500" />
-                </button>
-              ))}
+              <MultiSelectFilter
+                label="Stage"
+                options={availableStages}
+                selectedValues={filters.stages}
+                onChange={setStageFilter}
+                count={filterCounts.stage}
+              />
+              <MultiSelectFilter
+                label="Market"
+                options={availableMarkets}
+                selectedValues={filters.markets}
+                onChange={setMarketFilter}
+                count={filterCounts.market}
+              />
+              <MultiSelectFilter
+                label="Strategy"
+                options={availableStrategies}
+                selectedValues={filters.strategies}
+                onChange={setStrategyFilter}
+                count={filterCounts.strategy}
+              />
+              <EquityRangeFilter
+                selectedRanges={filters.equityRanges}
+                onChange={setEquityRangeFilter}
+                count={filterCounts.equity}
+              />
             </div>
 
             {/* Sort Dropdown */}
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-              Sort by: Recent
-              <ChevronDown size={14} className="text-gray-500" />
-            </button>
+            <SortDropdown value={filters.sortBy} onChange={setSortBy} />
           </div>
         </div>
 
         {/* Pipeline Table */}
         <PipelineTable
           onViewDeal={onViewDeal}
-          deals={filteredDeals}
+          deals={filteredAndSortedDeals}
           isLoading={isLoading}
         />
       </div>
