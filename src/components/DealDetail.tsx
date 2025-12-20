@@ -36,6 +36,8 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'financials' | 'sponsor' | 'documents' | 'notes'>('overview');
   const [noteText, setNoteText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isMovingNext, setIsMovingNext] = useState(false);
+  const [isPassing, setIsPassing] = useState(false);
   const { deal, isLoading, error, refetch } = useDealDetail(dealId);
 
   const handleDelete = async () => {
@@ -56,6 +58,51 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
       alert('Failed to delete deal. Please try again.');
       setIsDeleting(false);
     }
+  };
+
+  const handleMoveNext = async () => {
+    if (!dealId || !deal) return;
+
+    try {
+      setIsMovingNext(true);
+      await dealsAPI.moveToNextStage(dealId);
+      await refetch(); // Refresh deal data
+      alert('Deal moved to next stage successfully!');
+    } catch (err) {
+      console.error('Failed to move deal:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to move deal to next stage';
+      alert(errorMessage);
+    } finally {
+      setIsMovingNext(false);
+    }
+  };
+
+  const handlePass = async () => {
+    if (!dealId || !deal) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to pass on "${deal.name}"? This will move it to the Passed section.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setIsPassing(true);
+      await dealsAPI.pass(dealId);
+      await refetch(); // Refresh deal data
+      alert('Deal marked as passed.');
+    } catch (err) {
+      console.error('Failed to pass deal:', err);
+      alert('Failed to pass deal. Please try again.');
+    } finally {
+      setIsPassing(false);
+    }
+  };
+
+  const isMoveNextDisabled = () => {
+    if (!deal) return true;
+    const rawStatus = deal.rawDeal.status || 'inbox';
+    return rawStatus === 'committed' || rawStatus === 'passed';
   };
 
   const tabs = [
@@ -162,12 +209,20 @@ export function DealDetail({ dealId, onBack }: DealDetailProps) {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-[#D4FF00] text-black text-sm rounded-lg hover:bg-[#C4EF00] transition-colors">
-                Move to Next Stage
+              <button
+                onClick={handleMoveNext}
+                disabled={isMovingNext || isMoveNextDisabled()}
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#D4FF00] text-black text-sm rounded-lg hover:bg-[#C4EF00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isMovingNext ? 'Moving...' : 'Move to Next Stage'}
                 <ArrowRight size={16} />
               </button>
-              <button className="px-4 py-2.5 border border-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors">
-                Pass
+              <button
+                onClick={handlePass}
+                disabled={isPassing}
+                className="px-4 py-2.5 border border-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPassing ? 'Passing...' : 'Pass'}
               </button>
               <button className="p-2.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
                 <Edit size={16} />

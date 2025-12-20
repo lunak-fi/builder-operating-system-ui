@@ -80,6 +80,20 @@ export const dealsAPI = {
       method: 'DELETE',
     });
   },
+
+  // Move deal to next stage
+  moveToNextStage: async (dealId: string): Promise<Deal> => {
+    return fetchAPI<Deal>(`/api/deals/${dealId}/move-next`, {
+      method: 'POST',
+    });
+  },
+
+  // Mark deal as passed
+  pass: async (dealId: string): Promise<Deal> => {
+    return fetchAPI<Deal>(`/api/deals/${dealId}/pass`, {
+      method: 'POST',
+    });
+  },
 };
 
 // Operators API

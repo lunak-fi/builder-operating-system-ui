@@ -71,9 +71,10 @@ function calculateDaysInStage(updatedAt: string): number {
 // Helper: Map backend status to UI stage
 function mapStatusToStage(status: string | null): string {
   const mapping: Record<string, string> = {
+    'received': 'Received',
     'inbox': 'Received',
     'pending': 'Received',
-    'screening': 'Received',
+    'screening': 'Under Review',
     'under_review': 'Under Review',
     'due_diligence': 'Due Diligence',
     'term_sheet': 'Term Sheet',
